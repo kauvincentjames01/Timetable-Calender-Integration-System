@@ -4,9 +4,9 @@ import { Pool } from 'pg';
 
 let pool;
 
-const initDbSchema = async (p) => {
+const initDbSchema = async (client) => {
   try {
-    await p.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100),
@@ -57,50 +57,61 @@ const initDbSchema = async (p) => {
     `);
     console.log('Database schema verified.');
   } catch (err) {
-    console.error('Failed to initialize mock database schema', err);
+    console.error('Failed to initialize database schema', err);
+    throw err;
+  }
+};
+
+const createPool = () => {
+  const dbUrl = process.env.DATABASE_URL?.trim();
+
+  if (!dbUrl || (!dbUrl.startsWith('postgres://') && !dbUrl.startsWith('postgresql://'))) {
+    console.warn('Valid DATABASE_URL is not set. Using mock database fallback for development/preview purposes.');
+    return null;
+  }
+
+  try {
+    const sslConfig = !/(localhost|127\.0\.0\.1)/.test(dbUrl)
+      ? { rejectUnauthorized: false }
+      : false;
+
+    const newPool = new Pool({
+      connectionString: dbUrl,
+      ssl: sslConfig,
+    });
+
+    newPool.on('error', (err) => {
+      console.error('Unexpected error on idle PostgreSQL client', err);
+    });
+
+    return newPool;
+  } catch (err) {
+    console.warn('Failed to create PostgreSQL pool.', err.message);
+    return null;
   }
 };
 
 export const getDb = () => {
   if (!pool) {
-    const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl || !dbUrl.startsWith('postgres') || dbUrl.includes('user:password@host')) {
-      console.warn('Valid DATABASE_URL is not set. Using mock database fallback for development/preview purposes.');
-      return null;
-    }
-
-    try {
-      // Handle SSL configuration: Render external connections require SSL.
-      let sslConfig = false;
-      if (!dbUrl.includes('localhost') && !dbUrl.includes('127.0.0.1')) {
-          sslConfig = { rejectUnauthorized: false };
-      }
-
-      pool = new Pool({
-        connectionString: dbUrl,
-        ssl: sslConfig
-      });
-
-      pool.on('error', (err) => {
-        console.error('Unexpected error on idle client', err);
-      });
-
-      // Initialize Schema
-      initDbSchema(pool);
-    } catch (e) {
-      console.warn('Failed to initialize PostgreSQL pool. Falling back to mock database.', e.message);
-      return null;
-    }
+    pool = createPool();
   }
   return pool;
 };
 
-// Quick helper for queries
-export const query = async (text, params) => {
-  const p = getDb();
-  if (p) {
-    return p.query(text, params);
+export const initDb = async () => {
+  const db = getDb();
+  if (!db) {
+    throw new Error('DATABASE_URL is not configured or invalid. Set DATABASE_URL to a valid PostgreSQL connection string.');
   }
-  throw new Error("Database not connected");
+  await initDbSchema(db);
+  return db;
+};
+
+export const query = async (text, params) => {
+  const db = getDb();
+  if (db) {
+    return db.query(text, params);
+  }
+  throw new Error('Database not connected. Please configure DATABASE_URL.');
 };
 
