@@ -54,6 +54,22 @@ const initDbSchema = async (client) => {
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         error_details TEXT
       );
+
+      CREATE TABLE IF NOT EXISTS webhooks (
+        id SERIAL PRIMARY KEY,
+        token_id INT REFERENCES tokens(id) ON DELETE CASCADE,
+        calendar_id VARCHAR(255),
+        google_access_token TEXT,
+        google_refresh_token TEXT,
+        webhook_url VARCHAR(255),
+        is_active BOOLEAN DEFAULT true,
+        last_triggered TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_webhook_token_id ON webhooks(token_id);
+      CREATE INDEX IF NOT EXISTS idx_webhook_active ON webhooks(is_active);
     `);
     console.log('Database schema verified.');
   } catch (err) {

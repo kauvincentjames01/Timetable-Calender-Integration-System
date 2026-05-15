@@ -1,5 +1,6 @@
 // backend/repositories/Repositories.js
 import { query } from '../database/db.js';
+import { WebhookRepository } from './WebhookRepository.js';
 
 export class TokenRepository {
   static async findByStudentRegNumber(regNumber) {

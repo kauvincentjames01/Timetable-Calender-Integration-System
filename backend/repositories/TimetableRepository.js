@@ -53,4 +53,9 @@ export class TimetableRepository {
     await query('DELETE FROM timetable_events WHERE id=$1', [id]);
     return { success: true };
   }
+
+  static async getById(id) {
+    const res = await query('SELECT * FROM timetable_events WHERE id=$1', [id]);
+    return res.rows[0];
+  }
 }
