@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import calendarRoutes from './routes/calendarRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import diagnosticRoutes from './routes/diagnosticRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { initDb } from './database/db.js';
 
@@ -40,6 +41,7 @@ async function startServer() {
   app.use('/api', calendarRoutes);
   app.use('/api/auth', authRoutes);
   app.use('/api/admin', adminRoutes);
+  app.use('/api/diagnostic', diagnosticRoutes);
 
   // Global Error Handler for APIs
   app.use(errorHandler);

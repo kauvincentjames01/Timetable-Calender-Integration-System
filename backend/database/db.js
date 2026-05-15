@@ -78,6 +78,30 @@ const initDbSchema = async (client) => {
   }
 };
 
+const defaultTimetableEvents = [
+  { course_code: 'BSE 3201', course_name: 'System Integration & Deployment', lecturer: 'Dr. Richard Ssekibuule', location: 'Block A - Room 102', day_of_week: 0, start_time: '09:00', end_time: '11:00' },
+  { course_code: 'BIT 3208', course_name: 'IT Project Management', lecturer: 'Dr. Evelyn Kigozi', location: 'CIT Lab 2', day_of_week: 0, start_time: '14:00', end_time: '17:00' },
+  { course_code: 'CSC 3201', course_name: 'Computer Networks II', lecturer: 'Prof. Engineer', location: 'CIT Lab 4', day_of_week: 1, start_time: '10:00', end_time: '13:00' },
+  { course_code: 'IST 3204', course_name: 'Information Systems Security', lecturer: 'Mr. Paul Birevu', location: 'Block B - Room 10', day_of_week: 2, start_time: '09:00', end_time: '12:00' },
+  { course_code: 'IST 3205', course_name: 'Data Warehousing and Mining', lecturer: 'Dr. Agnes Nakakawa', location: 'CIT Lab 3', day_of_week: 3, start_time: '15:00', end_time: '17:00' },
+  { course_code: 'BKE 3201', course_name: 'Entrepreneurship Skills', lecturer: 'Mrs. Sarah Nanyonga', location: 'FEMA Big Lab', day_of_week: 4, start_time: '11:00', end_time: '13:00' },
+];
+
+const seedDefaultTimetable = async (client) => {
+  const countRes = await client.query('SELECT COUNT(*) AS count FROM timetable_events');
+  const count = parseInt(countRes.rows[0].count, 10);
+  if (count === 0) {
+    for (const event of defaultTimetableEvents) {
+      await client.query(
+        `INSERT INTO timetable_events (course_code, course_name, lecturer, location, day_of_week, start_time, end_time)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [event.course_code, event.course_name, event.lecturer, event.location, event.day_of_week, event.start_time, event.end_time]
+      );
+    }
+    console.log('Seeded default timetable events.');
+  }
+};
+
 const createPool = () => {
   const dbUrl = process.env.DATABASE_URL?.trim();
 
@@ -120,6 +144,7 @@ export const initDb = async () => {
     throw new Error('DATABASE_URL is not configured or invalid. Set DATABASE_URL to a valid PostgreSQL connection string.');
   }
   await initDbSchema(db);
+  await seedDefaultTimetable(db);
   return db;
 };
 
