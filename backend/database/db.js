@@ -1,4 +1,5 @@
 // backend/database/db.js
+import 'dotenv/config';
 import { Pool } from 'pg';
 
 let pool;
@@ -69,10 +70,15 @@ export const getDb = () => {
     }
 
     try {
+      // Handle SSL configuration: Render external connections require SSL.
+      let sslConfig = false;
+      if (!dbUrl.includes('localhost') && !dbUrl.includes('127.0.0.1')) {
+          sslConfig = { rejectUnauthorized: false };
+      }
+
       pool = new Pool({
         connectionString: dbUrl,
-        // allow unauthorized for local development
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        ssl: sslConfig
       });
 
       pool.on('error', (err) => {
